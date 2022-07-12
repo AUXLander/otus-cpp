@@ -19,9 +19,10 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-add_executable(test_version test_version.cpp)
+add_executable(tests test_version.cpp)
 
-add_test(NAME test_version COMMAND test_version)
+enable_testing()
+add_test(NAME tests COMMAND tests)
 
 #
 
@@ -36,7 +37,7 @@ target_link_libraries(helloworld_cli PRIVATE
     helloworld
 )
 
-target_link_libraries(test_version 
+target_link_libraries(tests 
     PRIVATE helloworld
     PUBLIC gtest 
 )
@@ -51,7 +52,7 @@ if (MSVC)
         /W4
     )
 
-    target_compile_options(test_version PRIVATE
+    target_compile_options(tests PRIVATE
         /W4
     )
 
@@ -65,7 +66,7 @@ else()
         -Wall -Wextra -pedantic -Werror
     )
 
-    target_compile_options(test_version PRIVATE
+    target_compile_options(tests PRIVATE
         -Wall -Wextra -pedantic -Werror
     )
 
@@ -81,6 +82,3 @@ set(CPACK_PACKAGE_VERSION_PATCH "${PROJECT_VERSION_PATCH}")
 set(CPACK_PACKAGE_CONTACT de.nikolaev@mfisoft.com)
 
 include(CPack)
-
-# enable_testing()
-# add_test(NAME test_version COMMAND test_version)
