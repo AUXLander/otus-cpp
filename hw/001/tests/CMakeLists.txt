@@ -9,30 +9,30 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-add_executable(tests tests.cpp)
+add_executable(${TESTS_NAME} tests.cpp)
 
 enable_testing()
 add_test(NAME tests COMMAND tests)
 
-target_link_libraries(tests 
-    PRIVATE helloworld
+target_link_libraries(${TESTS_NAME} 
+    PRIVATE ${LIBRARY_NAME}
     PUBLIC gtest 
 )
 
-target_include_directories(tests PUBLIC ${CMAKE_SOURCE_DIR})
+target_include_directories(${TESTS_NAME} PUBLIC ${CMAKE_SOURCE_DIR})
 
 if (MSVC)
 
-    target_compile_options(tests PRIVATE
+    target_compile_options(${TESTS_NAME} PRIVATE
         /W4
     )
 
 else()
 
-    target_compile_options(tests PRIVATE
+    target_compile_options(${TESTS_NAME} PRIVATE
         -Wall -Wextra -pedantic -Werror
     )
 
 endif()
 
-install(TARGETS tests DESTINATION bin)
+install(TARGETS ${TESTS_NAME} DESTINATION bin)
