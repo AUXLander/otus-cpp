@@ -13,6 +13,10 @@
 
 #include "lib.h"
 
+/*
+ * This function will split provided string with separator and call for lambda to process substring.
+ * The result of lambda to check will splitting be countinued or not
+ */
 template< class Tlambda>
 void split(const std::string_view& str, char separator, Tlambda lambda)
 {
@@ -59,7 +63,9 @@ public:
 
     ipv4(const std::string_view& str)
     {
-        split(str, '.',
+        constexpr auto SEPARATOR = '.';
+
+        split(str, SEPARATOR,
             [this](size_t index, const std::string_view& substr)
             {
                 if (index < bytes.size())
@@ -142,12 +148,15 @@ ip_pool_t get_ip_pool(Tstream& stream)
 
     for (std::string line; std::getline(stream, line);)
     {
-        split(line, '\t',
-            [&ip_pool](size_t, const std::string_view& substr)
+        constexpr auto SEPARATOR = '\t';
+
+        split(line, SEPARATOR,
+            [&ip_pool](size_t index, const std::string_view& substr)
             {
                 ip_pool.emplace_back(substr);
 
-                return false;
+                // interested in a first splitted substring
+                return index == 0 ? false : false;
             }
         );
     }
