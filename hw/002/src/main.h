@@ -18,7 +18,7 @@
  * The result of lambda to check will splitting be countinued or not
  */
 template< class Tlambda>
-void split(const std::string_view& str, char separator, Tlambda lambda)
+void split(const std::string_view &str, char separator, Tlambda lambda)
 {
     bool result = true;
     size_t index = 0U;
@@ -47,7 +47,7 @@ public:
 
     struct hash
     {
-        inline size_t operator()(const ipv4& o) const noexcept
+        inline size_t operator()(const ipv4 &o) const noexcept
         {
             return o.__reinterpret_continuous();
         }
@@ -61,12 +61,12 @@ public:
 
     ipv4& operator=(const ipv4&) = default;
 
-    ipv4(const std::string_view& str)
+    ipv4(const std::string_view &str)
     {
         constexpr auto SEPARATOR = '.';
 
         split(str, SEPARATOR,
-            [this](size_t index, const std::string_view& substr)
+            [this](size_t index, const std::string_view &substr)
             {
                 if (index < bytes.size())
                 {
@@ -78,31 +78,31 @@ public:
         );
     }
 
-    inline bool operator>(const ipv4& other) const noexcept
+    inline bool operator>(const ipv4 &other) const noexcept
     {
         return __reinterpret_continuous() > other.__reinterpret_continuous();
     }
 
-    inline bool operator<(const ipv4& other) const noexcept
+    inline bool operator<(const ipv4 &other) const noexcept
     {
         return __reinterpret_continuous() < other.__reinterpret_continuous();
     }
 
-    inline bool operator==(const ipv4& other) const noexcept
+    inline bool operator==(const ipv4 &other) const noexcept
     {
         return __reinterpret_continuous() == other.__reinterpret_continuous();
     }
 
-    void print(std::ostream& output) const
+    void print(std::ostream &output) const
     {
         const auto store_flags = output.flags();
 
         output << std::fixed;
 
         output << std::setw(3U) << static_cast<int>(bytes[0]) << '.'
-            << std::setw(3U) << static_cast<int>(bytes[1]) << '.'
-            << std::setw(3U) << static_cast<int>(bytes[2]) << '.'
-            << std::setw(3U) << static_cast<int>(bytes[3]);
+               << std::setw(3U) << static_cast<int>(bytes[1]) << '.'
+               << std::setw(3U) << static_cast<int>(bytes[2]) << '.'
+               << std::setw(3U) << static_cast<int>(bytes[3]);
 
         output.flags(store_flags);
     }
@@ -121,7 +121,7 @@ public:
         return output;
     }
 
-    friend std::ostream& operator<<(std::ostream& output, const ipv4& ip)
+    friend std::ostream& operator<<(std::ostream &output, const ipv4 &ip)
     {
         ip.print(output);
 
@@ -142,7 +142,7 @@ private:
 using ip_pool_t = std::deque<ipv4>;
 
 template<class Tstream>
-ip_pool_t get_ip_pool(Tstream& stream)
+ip_pool_t get_ip_pool(Tstream &stream)
 {
     ip_pool_t ip_pool;
 
@@ -151,7 +151,7 @@ ip_pool_t get_ip_pool(Tstream& stream)
         constexpr auto SEPARATOR = '\t';
 
         split(line, SEPARATOR,
-            [&ip_pool](size_t index, const std::string_view& substr)
+            [&ip_pool](size_t index, const std::string_view &substr)
             {
                 ip_pool.emplace_back(substr);
 
