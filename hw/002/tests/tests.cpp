@@ -14,9 +14,9 @@ TEST(test_valid_version, test_valid_version)
 
 TEST(test_ip_pool, test_ip_pool_select_first_1)
 {
-    const auto path = get_test_data_path();
+    std::fstream file_stream{ get_test_data_path() };
 
-    ip_pool_t any = get_ip_pool(std::fstream{ path });
+    ip_pool_t any = get_ip_pool(file_stream);
     ip_pool_t tmp;
 
     ip_pool_t origin = {
@@ -34,9 +34,9 @@ TEST(test_ip_pool, test_ip_pool_select_first_1)
 
 TEST(test_ip_pool, test_ip_pool_select_first_46_second_70)
 {
-    const auto path = get_test_data_path();
+    std::fstream file_stream{ get_test_data_path() };
 
-    ip_pool_t any = get_ip_pool(std::fstream{ path });
+    ip_pool_t any = get_ip_pool(file_stream);
     ip_pool_t tmp;
 
     ip_pool_t origin = {
@@ -53,9 +53,9 @@ TEST(test_ip_pool, test_ip_pool_select_first_46_second_70)
 
 TEST(test_ip_pool, test_ip_pool_select_any_46)
 {
-    const auto path = get_test_data_path();
+    std::fstream file_stream{ get_test_data_path() };
 
-    ip_pool_t any = get_ip_pool(std::fstream{ path });
+    ip_pool_t any = get_ip_pool(file_stream);
     ip_pool_t tmp;
 
     ip_pool_t origin = {

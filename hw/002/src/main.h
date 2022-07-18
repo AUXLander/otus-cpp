@@ -127,9 +127,9 @@ private:
     inline uint32_t __reinterpret_continuous() const noexcept
     {
         return static_cast<uint32_t>(bytes[0]) << 24
-            | static_cast<uint32_t>(bytes[1]) << 16
-            | static_cast<uint32_t>(bytes[2]) << 8
-            | static_cast<uint32_t>(bytes[3]) << 0;
+             | static_cast<uint32_t>(bytes[1]) << 16
+             | static_cast<uint32_t>(bytes[2]) << 8
+             | static_cast<uint32_t>(bytes[3]) << 0;
     }
 };
 

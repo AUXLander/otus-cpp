@@ -7,7 +7,9 @@ int main(int, char const *[])
     {
         auto print = [](const ipv4& ip) { std::cout << ip << std::endl; };
 
-        ip_pool_t any = get_ip_pool(std::fstream{ "path\\to\\ip_filter.tsv" });
+        std::fstream file_stream{ "path\\to\\ip_filter.tsv" };
+
+        ip_pool_t any = get_ip_pool(file_stream);
         // ip_pool_t any = get_ip_pool(std::cin);
 
         {
