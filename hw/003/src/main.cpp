@@ -1,49 +1,21 @@
 #include <fstream>
+#include <vector>
+#include <list>
 #include "main.h"
 
 int main(int, char const *[])
 {
-    try
+    linear_allocator<int> alloc;
+
+    // std::vector<int> vec(10, 1);
+    std::vector vec({1, 2, 3, 4, 5, 6, 7, 8, 9}, alloc);
+
+    for(auto & v : vec)
     {
-        auto print = [](const ipv4& ip) { std::cout << ip << std::endl; };
-
-        std::fstream file_stream{ "path\\to\\ip_filter.tsv" };
-
-        ip_pool_t any = get_ip_pool(file_stream);
-        // ip_pool_t any = get_ip_pool(std::cin);
-
-        {
-            std::for_each(any.begin(), any.end(), print);
-        }
-
-        {
-            ip_pool_t tmp;
-
-            std::copy_if(any.begin(), any.end(), std::back_inserter(tmp), [](ipv4& ip) { return ip.bytes[0] == 1; });
-
-            std::for_each(tmp.begin(), tmp.end(), print);
-        }
-
-        {
-            ip_pool_t tmp;
-
-            std::copy_if(any.begin(), any.end(), std::back_inserter(tmp), [](ipv4& ip) { return ip.bytes[0] == 46 && ip.bytes[1] == 70; });
-
-            std::for_each(tmp.begin(), tmp.end(), print);
-        }
-
-        {
-            ip_pool_t tmp;
-
-            std::copy_if(any.begin(), any.end(), std::back_inserter(tmp), [](ipv4& ip) { return ip.bytes[0] == 46 || ip.bytes[1] == 46 || ip.bytes[2] == 46 || ip.bytes[3] == 46; });
-
-            std::for_each(tmp.begin(), tmp.end(), print);
-        }
+        std::cout << v << std::endl;
     }
-    catch(const std::exception &e)
-    {
-        std::cerr << e.what() << std::endl;
-    }
+
+    vec.resize(20);
 
     return 0;
 }

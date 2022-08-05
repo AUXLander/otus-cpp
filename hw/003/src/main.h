@@ -1,3 +1,5 @@
+#pragma once
+
 #include <iostream>
 #include <cassert>
 #include <cstdlib>
@@ -12,166 +14,253 @@
 #include <unordered_set>
 #include <iomanip>
 #include <memory>
+#include <limits>
 
 #include "lib.h"
 
-struct policy
+constexpr static bool debug = false;
+
+#ifndef __PRETTY_FUNCTION__
+#define __PRETTY_FUNCTION__ __FUNCTION__
+#endif // !__PRETTY_FUNCTION__
+
+
+template<typename T>
+class linear_allocator
 {
-    enum class reallocation
-    {
-        linear,
-        pool
-    };
-    
-    struct strategy 
-    {
-        template<size_t Total_Count>
-        struct fixed
-        {
-            size_t operator()(size_t value) const 
-            {
-                return value;
-            }
-
-            size_t initial_count() const 
-            {
-                return Total_Count;
-            }
-
-
-        };
-
-        template<size_t Initial_Count>
-        struct expand_doubling
-        {
-            size_t operator()(size_t value) const 
-            {
-                return value * 2U;
-            }
-
-            size_t initial_count() const 
-            {
-                return Initial_Count;
-            }
-        };
-    };
-};
-
-template<class T, class Tstrategy, policy::reallocation Treallocation>
-class myalloc
-{
-    using symbol = typename T;
-    using word   = symbol[8U];
-
-    // using container_t = std::conditional<
-    //                         std::is_same<Treallocation, policy::reallocation::linear>::value,
-    //                         std::vector<symbol>, std::list<word>>;
-
-    using strategy_t = policy::strategy::fixed<16> ;// Tstrategy;
-
-    strategy_t strategy;
-
-    std::unique_ptr<symbol[]> __memptr {nullptr};
-    std::deque<bool>          __empty_memcells;
-    
-    size_t                    __total_count;
-    size_t                    __used_count;
-
-    std::unique_ptr<symbol[]> alloc(size_t count)
-    {
-        auto memptr = reinterpret_cast<symbol*>(malloc(sizeof(symbol) * count));
-
-        memset(memptr, 0, sizeof(symbol) * __total_count);
-
-        return memptr;
-    }
-
-    void setup_memory(std::unique_ptr<symbol[]>&& mempool, size_t mempool_size)
-    {
-        assert(__memptr);
-        assert(mempool_size);
-
-        __memptr = std::move(mempool);
-        __total_count = mempool_size;
-        __empty_memcells.resize(__total_count, true);
-    }
-
 public:
-    myalloc()
+    using size_type = std::size_t;
+    using pointer = T*;
+    using const_pointer = const T*;
+    using difference_type = typename std::pointer_traits<pointer>::difference_type;
+    using reference = T&;
+    using const_reference = const T&;
+    using value_type = T;
+
+    template <typename U>
+    struct rebind
+    { 
+        using other = linear_allocator<U>;
+    };
+
+//private:
+    std::byte  *__memptr { nullptr };
+    std::size_t __offset { 0U };
+
+    constexpr static std::size_t WORD_SIZE = sizeof(value_type);
+    constexpr static std::size_t WORD_COUNT = 1024U;
+    constexpr static std::size_t MEMORY_LIMIT_SIZE = WORD_SIZE * WORD_COUNT;
+public:
+    linear_allocator() noexcept
     {
-        __total_count = strategy.initial_count();
-        __used_count = 0;
+        debug && std::cout << "constructor: " << __PRETTY_FUNCTION__ << std::endl;
+    };
 
-        auto new_memptr = alloc(__total_count);
-
-        setup_memory(std::move(new_memptr), __total_count);
+    template <class U> 
+    linear_allocator(const linear_allocator<U>& other) noexcept :
+        __memptr(other.__memptr), __offset(other.__offset)
+    {
+        debug && std::cout << "copy constructor: " << __PRETTY_FUNCTION__ << std::endl;
     }
 
-    T* allocate(size_t count)
+    ~linear_allocator() noexcept
     {
-        assert(count > 0);
-
-        // count of T should be emplaced linear 
-        //if constexpr (Treallocation == policy::reallocation::linear)
-        //{
-            symbol *memptr = reinterpret_cast<symbol*>(__memptr);
-            symbol *subsequence_memptr = memptr;
-            symbol *longest_memptr = nullptr;
-            size_t  subsequence_length = 0;
-            size_t  longest_subsequence_length = 0;
-
-            for(const auto is_cell_empty : __empty_memcells)
-            {
-                if (!is_cell_empty)
-                {
-                    if (subsequence_length > longest_subsequence_length)
-                    {
-                        longest_subsequence_length = subsequence_length;
-                        longest_memptr = subsequence_memptr;
-                    }
-                    
-                    subsequence_length = 0;
-                    subsequence_memptr = std::next(memptr);
-                }
-
-                subsequence_length += static_cast<size_t>(is_cell_empty);
-                ++memptr;
-            }
-
-            if (subsequence_length > longest_subsequence_length)
-            {
-                longest_subsequence_length = subsequence_length;
-                longest_memptr = subsequence_memptr;
-            }
-
-            // have to realloc
-            if (longest_subsequence_length < count)
-            {
-                throw std::bad_alloc;
-            }
-
-            return longest_memptr;
-        //}
+        debug && std::cout << "destructor: " << __PRETTY_FUNCTION__ << std::endl;
     }
 
-    void deallocate(void* memory_ptr, std::size_t size)
+    pointer allocate(size_type count, const void* hint = 0)
     {
-        if ( (!memory_ptr) || (size == 0u) )
+        debug && std::cout << "allocate: " << __PRETTY_FUNCTION__ << std::endl;
+
+        assert(count > 0U);
+
+        const auto size = count * WORD_SIZE;
+
+        if (__offset + size > MEMORY_LIMIT_SIZE || hint)
         {
-            return;
+            throw std::bad_alloc();
         }
 
-        symbol* deallocation_ptr = reinterpret_cast<symbol*>(memory_ptr);
+        if (!__memptr)
+        {
+            __memptr = reinterpret_cast<std::byte*>(malloc(MEMORY_LIMIT_SIZE));
+            __offset = 0;
 
-        //if ()
+            if (__memptr)
+            {
+                memset(__memptr, 0, MEMORY_LIMIT_SIZE);
+            }
+            else
+            {
+                throw std::bad_alloc();
+            }
+        }
 
-        // TO DO
+        auto memp = __memptr + __offset;
 
+        __offset += size;
+
+        return reinterpret_cast<pointer>(memp);
     }
 
+    void deallocate(pointer const p, size_type size)
+    {
+        debug && std::cout << "deallocate: " << __PRETTY_FUNCTION__ << std::endl;
+
+        if (__memptr)
+        {
+            free(__memptr);
+            __memptr = nullptr;
+            __offset = 0;
+        }
+
+        return;
+    }
+
+    template<typename ...Args>
+    void construct(pointer const p, Args&& ...args)
+    {
+        debug && std::cout << "construct: " << __PRETTY_FUNCTION__ << std::endl;
+        ::new (p) T(std::forward<Args>(args)...);
+    }
+
+    template<typename U>
+    void destroy(U * const p)
+    {
+        debug && std::cout << "destroy: " << __PRETTY_FUNCTION__ << std::endl;
+        p->~U();
+    }
 };
 
-void test()
+template <class T, class U>
+constexpr bool operator== (const linear_allocator<T>& lhs, const linear_allocator<U>& rhs) noexcept
 {
-    myalloc<int, policy::strategy::fixed<16>, policy::reallocation::linear> alloc;
+    return lhs.__memptr == rhs.__memptr;
+}
+
+template <class T, class U>
+constexpr bool operator!= (const linear_allocator<T>& lhs, const linear_allocator<U>& rhs) noexcept
+{
+    return lhs.__memptr != rhs.__memptr;
+}
+
+
+template<typename T>
+class pool_allocator
+{
+public:
+    using size_type = std::size_t;
+    using pointer = T*;
+    using const_pointer = const T*;
+    using difference_type = typename std::pointer_traits<pointer>::difference_type;
+    using reference = T&;
+    using const_reference = const T&;
+    using value_type = T;
+
+    template <typename U>
+    struct rebind
+    {
+        using other = pool_allocator<U>;
+    };
+
+    //private:
+    std::byte* __memptr{ nullptr };
+    std::size_t __offset{ 0U };
+
+    constexpr static std::size_t WORD_SIZE = sizeof(value_type);
+    constexpr static std::size_t WORD_COUNT = 1024U;
+    constexpr static std::size_t MEMORY_LIMIT_SIZE = WORD_SIZE * WORD_COUNT;
+public:
+    pool_allocator() noexcept
+    {
+        debug && std::cout << "constructor: " << __PRETTY_FUNCTION__ << std::endl;
+    };
+
+    template <class U>
+    pool_allocator(const pool_allocator<U>& other) noexcept :
+        __memptr(other.__memptr), __offset(other.__offset)
+    {
+        debug&& std::cout << "copy constructor: " << __PRETTY_FUNCTION__ << std::endl;
+    }
+
+    ~pool_allocator() noexcept
+    {
+        debug && std::cout << "destructor: " << __PRETTY_FUNCTION__ << std::endl;
+    }
+
+    pointer allocate(size_type count, const void* hint = 0)
+    {
+        debug && std::cout << "allocate: " << __PRETTY_FUNCTION__ << std::endl;
+
+        assert(count > 0U);
+
+        const auto size = count * WORD_SIZE;
+
+        if (__offset + size > MEMORY_LIMIT_SIZE || hint)
+        {
+            throw std::bad_alloc();
+        }
+
+        if (!__memptr)
+        {
+            __memptr = reinterpret_cast<std::byte*>(malloc(MEMORY_LIMIT_SIZE));
+            __offset = 0;
+
+            if (__memptr)
+            {
+                memset(__memptr, 0, MEMORY_LIMIT_SIZE);
+            }
+            else
+            {
+                throw std::bad_alloc();
+            }
+        }
+
+        auto memp = __memptr + __offset;
+
+        __offset += size;
+
+        return reinterpret_cast<pointer>(memp);
+    }
+
+    void deallocate(pointer const p, size_type size)
+    {
+        debug && std::cout << "deallocate: " << __PRETTY_FUNCTION__ << std::endl;
+
+        if (__memptr)
+        {
+            free(__memptr);
+            __memptr = nullptr;
+            __offset = 0;
+        }
+
+        return;
+    }
+
+    template<typename ...Args>
+    void construct(pointer const p, Args&& ...args)
+    {
+        debug && std::cout << "construct: " << __PRETTY_FUNCTION__ << std::endl;
+
+        ::new (p) T(std::forward<Args>(args)...);
+    }
+
+    template<typename U>
+    void destroy(U* const p)
+    {
+        debug && std::cout << "destroy: " << __PRETTY_FUNCTION__ << std::endl;
+        p->~U();
+    }
+};
+
+template <class T, class U>
+constexpr bool operator== (const pool_allocator<T>& lhs, const pool_allocator<U>& rhs) noexcept
+{
+    return lhs.__memptr == rhs.__memptr;
+}
+
+template <class T, class U>
+constexpr bool operator!= (const pool_allocator<T>& lhs, const pool_allocator<U>& rhs) noexcept
+{
+    return lhs.__memptr != rhs.__memptr;
 }

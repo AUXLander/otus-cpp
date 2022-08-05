@@ -13,6 +13,7 @@ configure_file(version.h.in version.h)
 # add homework projects
 add_subdirectory(hw/001)
 add_subdirectory(hw/002)
+add_subdirectory(hw/003)
 
 set(CPACK_GENERATOR DEB)
 set(CPACK_PACKAGE_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
