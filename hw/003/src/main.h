@@ -15,6 +15,7 @@
 #include <iomanip>
 #include <memory>
 #include <limits>
+#include <cstring>
 
 #include "lib.h"
 
