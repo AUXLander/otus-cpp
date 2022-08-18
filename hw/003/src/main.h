@@ -104,7 +104,7 @@ public:
         return reinterpret_cast<pointer>(memp);
     }
 
-    void deallocate(pointer const p, size_type size)
+    void deallocate(pointer const, size_type)
     {
         debug && std::cout << "deallocate: " << __PRETTY_FUNCTION__ << std::endl;
 
@@ -224,7 +224,7 @@ public:
         return reinterpret_cast<pointer>(memp);
     }
 
-    void deallocate(pointer const p, size_type size)
+    void deallocate(pointer const, size_type)
     {
         debug && std::cout << "deallocate: " << __PRETTY_FUNCTION__ << std::endl;
 
